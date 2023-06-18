@@ -1,0 +1,87 @@
+#!/usr/bin/env bash
+
+
+dir=''
+#when only directory is argument
+if [[ $# -eq 1 ]] && [[ -d $1 ]]
+then
+    $0 -nth 1 $1
+
+#assigning dir when 3 arguments
+elif [[ $# -eq 3 ]] && [[ -d  $3 ]]
+then 
+    dir=$3
+else
+    echo "Usage: common_words [-w word | -nth N] <directory of text files>" > /dev/stderr
+    exit 1
+fi
+
+#cd to directory in argument
+#pathDir="$(find / -type d -name "$dir"  2>/dev/null)"
+#cd $pathDir
+
+
+case $1 in
+   -w)
+
+       word=$2;
+       #loop over all text files in directory
+       for file in *.txt
+       do
+           result=$(cat $file | tr -cs '[A-Za-z]' '\012' | sort | uniq -c | sort -k 1nr | grep -o -n -w $word)
+           if [[ ! -z "$result" ]]
+           then
+               echo "$result:$file"
+           fi
+       
+       done > temp
+       
+       rank=$(cat temp | sort -k 1nr | tail -n 1 | cut -d ':' -f1)
+       fileName=$(cat temp | sort -k 1nr | tail -n 1 | cut -d ':' -f3);
+       
+       #check if word is in any file
+       if [[ -z "$rank" ]] && [[ -z "$rank" ]]
+       then 
+           echo "Word not found in any file" >  /dev/stderr
+           exit 1
+       else
+           echo The most significant rank for the word $word is $rank in file $fileName 
+       fi
+       rm temp;; 
+        
+  -nth) 
+      
+      N=$2
+      for file in *.txt
+      do
+          cat $file | tr -cs '[A-Za-z]' '\012' | sort | uniq -c | sort -k 1nr | head -$N | tail -1
+ 
+      done > fil
+      
+      word=$(cat fil | sed 's/^ *//g' | cut -d ' ' -f2 | sort | uniq -c | sort -k 1nr | head -n 1 | sed 's/^ *//g' | cut -d ' ' -f2)
+      nFiles=$(cat fil | sed 's/^ *//g' | cut -d ' ' -f2 | sort | uniq -c | sort -k 1nr | head -n 1 | sed 's/^ *//g' | cut -d ' ' -f1)
+      
+      #check if n is not too large
+      if [[ -z "$word" ]] && [[ -z "$nFiles" ]]
+      then
+          echo  The value of n is larger than the number of unique words > /dev/stderr
+          exit 1
+      else
+          echo The "$N"th most common word is \""$word"\" across $nFiles files
+      fi
+      rm fil;;
+   
+
+        *)
+            
+            echo "Usage: common_words [-w word | -nth N] <directory of text files>" > /dev/stderr
+            exit 1
+        
+        ;;
+
+esac
+
+
+
+
+
